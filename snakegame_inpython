@@ -1,5 +1,12 @@
 import curses
 import random
+
+import time
+import os
+
+HIGH_SCORE_FILE = "snake_highscore.txt"
+
+=======
 import os
 from datetime import datetime
 
@@ -7,6 +14,7 @@ HIGH_SCORE_FILE = "snake_highscore.txt"
 
 
 # Load high score
+
 def load_high_score():
     if os.path.exists(HIGH_SCORE_FILE):
         with open(HIGH_SCORE_FILE, "r") as f:
@@ -14,6 +22,8 @@ def load_high_score():
                 return int(f.read())
             except:
                 return 0
+
+=======
 =======
 # Load and save high score
 def load_high_score():
@@ -21,6 +31,7 @@ def load_high_score():
         with open(HIGH_SCORE_FILE, "r") as f:
             try: return int(f.read())
             except: return 0
+
 
     return 0
 
@@ -32,6 +43,11 @@ def snake_game():
     screen = curses.initscr()
     curses.curs_set(0)
     curses.start_color()
+
+    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Snake
+    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)    # Food
+    curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK) # Score
+=======
 
     curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)   # Snake
 =======
@@ -52,10 +68,18 @@ def snake_game():
 
 
 
+
     height, width = 20, 60
     win = curses.newwin(height, width, 0, 0)
     win.keypad(1)
     win.timeout(150)
+
+
+    # Initial snake and food
+    snake = [[10, 30], [10, 29], [10, 28]]
+    food = [random.randint(1, height-2), random.randint(1, width-2)]
+    win.addch(food[0], food[1], curses.ACS_PI, curses.color_pair(2))
+=======
 
 
     # Initial snake
@@ -73,8 +97,17 @@ def snake_game():
     ]
 
 
+
     score = 0
     high_score = load_high_score()
+
+    paused = False
+
+    while True:
+        win.border()
+        win.addstr(0, 2, f" Score: {score} ", curses.color_pair(3))
+        win.addstr(0, 20, f" High Score: {high_score} ", curses.color_pair(3))
+=======
     level = 1
     key = curses.KEY_RIGHT
     paused = False
@@ -141,6 +174,7 @@ def snake_game():
         win.border()
         win.addstr(0, 2, f" Score: {score} Level: {level} ", curses.color_pair(5))
         win.addstr(0, 30, f" High Score: {high_score} ", curses.color_pair(5))
+
 
         next_key = win.getch()
         if next_key == ord('p') or next_key == ord('P'):
@@ -243,6 +277,13 @@ def snake_game():
 =======
         # Move player snake
 
+
+        if paused:
+            continue
+
+        # Calculate new head
+=======
+
         head = snake[0][:]
         if key==curses.KEY_DOWN: head[0]+=1
         elif key==curses.KEY_UP: head[0]-=1
@@ -261,11 +302,16 @@ def snake_game():
                 dead = True
         if dead:
             curses.endwin()
+
+            print(f"Game Over! Your score: {score}")
+            if score > high_score:
+=======
             print(f"Game Over! Score:{score} Level:{level}")
 
             if score>high_score:
 
-                save_high_score(score)
+
+               save_high_score(score)
                 print("New High Score!")
             break
 
@@ -274,6 +320,18 @@ def snake_game():
 
         # Check food collision
         if head == food:
+
+            score += 1
+            # Increase speed as score increases
+            new_timeout = max(50, 150 - (score * 5))
+            win.timeout(new_timeout)
+            # Generate new food
+            food = None
+            while food is None:
+                nf = [random.randint(1, height-2), random.randint(1, width-2)]
+                food = nf if nf not in snake else None
+            win.addch(food[0], food[1], curses.ACS_PI, curses.color_pair(2))
+=======
             if food_type == 'normal':
                 score += 1
                 curses.beep()
@@ -318,6 +376,7 @@ def snake_game():
             # Randomly spawn power-up
             if random.random()<0.2: power_up_pos = create_powerup()
 
+
         else:
             tail = snake.pop()
             win.addch(tail[0],tail[1],' ')
@@ -331,12 +390,15 @@ def snake_game():
 
         # Draw snake
         win.addch(head[0], head[1], curses.ACS_CKBOARD, curses.color_pair(1))
+
+=======
 =======
         # Decrease power-up timer
         if power_up:
             power_timer -= 1
             if power_timer <=0:
                 power_up = False
+
 
 
         # Move AI snakes
